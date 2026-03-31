@@ -1,0 +1,20 @@
+[
+  {
+    "id": "cce2f63a-b211-4a86-87de-8fc70b69db56",
+    "name": "Test Project",
+    "apiKey": "geo_8f6692f514ad4adacee5d830d89408dd9e6240c427d1cc04",
+    "createdAt": "2026-03-30T09:26:02.724Z",
+    "requestCount": 1,
+    "lastUsed": "2026-03-30T09:26:02.733Z",
+    "active": true
+  },
+  {
+    "id": "e3dcd1c4-fc89-4517-9e63-6d4e2921d897",
+    "name": "My First Project",
+    "apiKey": "geo_17d8a72b3b3788f73998b8149f6960d8924348dcf94da216",
+    "createdAt": "2026-03-30T10:30:42.826Z",
+    "requestCount": 2,
+    "lastUsed": "2026-03-30T10:33:07.080Z",
+    "active": true
+  }
+]
