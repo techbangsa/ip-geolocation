@@ -255,10 +255,53 @@ console.log('Location:', location.data);
 
 ---
 
+## Usage Limits
+
+| Limit | Value | Configurable |
+|---|---|---|
+| **Rate limit** | 100 requests per 15-minute window, per IP | `RATE_LIMIT_MAX` in `.env` |
+| **Rate limit window** | 15 minutes (fixed) | hardcoded in `middleware/security.js` |
+| **Body size** | 10 KB max per request | hardcoded in `server.js` |
+| **External API timeout** | 5,000 ms (default) | `GEO_API_TIMEOUT` in `.env` |
+| **Cache TTL** | 10 minutes per IP lookup result | hardcoded in `utils/cache.js` |
+
+### Rate Limit Response Headers
+
+Every API response includes standard rate-limit headers so clients can track their quota:
+
+| Header | Description |
+|---|---|
+| `RateLimit-Limit` | Maximum requests allowed in the window |
+| `RateLimit-Remaining` | Requests remaining in the current window |
+| `RateLimit-Reset` | Timestamp (seconds) when the window resets |
+| `X-Request-Id` | Unique ID for the request (useful for debugging) |
+
+### When the Rate Limit Is Exceeded
+
+HTTP **429 Too Many Requests** is returned:
+
+```json
+{
+  "success": false,
+  "error": "Too Many Requests",
+  "message": "Rate limit exceeded. Please try again in 15 minutes."
+}
+```
+
+To raise the limit for your environment, set `RATE_LIMIT_MAX` in `.env`:
+
+```env
+RATE_LIMIT_MAX=500
+```
+
+> **Note:** The rate limit is enforced per client IP address. Clients behind the same NAT share the same quota unless `TRUST_PROXY=true` is set and a reverse proxy forwards a unique `x-forwarded-for` per client.
+
+---
+
 ## Security Notes
 
 - **Helmet** sets secure HTTP headers including HSTS, CSP, X-Frame-Options, X-Content-Type-Options.
-- **Rate Limiting** prevents abuse: 100 requests per 15-minute window per IP.
+- **Rate Limiting** prevents abuse: 100 requests per 15-minute window per IP (configurable via `RATE_LIMIT_MAX`).
 - **CORS** restricts which origins can call the API. Configure `ALLOWED_ORIGINS` in `.env`.
 - **Anti-Spoofing** strips `x-forwarded-for` headers unless `TRUST_PROXY` is enabled. This prevents clients from faking their IP.
 - **Private IP Blocking** rejects lookups for RFC 1918 / reserved addresses.

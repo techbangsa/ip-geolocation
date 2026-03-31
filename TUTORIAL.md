@@ -180,7 +180,58 @@ curl -H "x-api-key: geo_YOUR_API_KEY_HERE" http://localhost:3000/api/projects/st
 
 ---
 
-## Step 6: Integrate into a Frontend Application
+## Step 6: Monitor Rate Limits
+
+Every response from `/api/location` includes rate-limit headers you can inspect to track quota consumption before hitting the limit.
+
+### Reading the headers
+
+```bash
+curl -I -H "x-api-key: geo_YOUR_API_KEY_HERE" "http://localhost:3000/api/location?ip=8.8.8.8"
+```
+
+You'll see headers similar to:
+
+```
+HTTP/1.1 200 OK
+RateLimit-Limit: 100
+RateLimit-Remaining: 97
+RateLimit-Reset: 1743421800
+X-Request-Id: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+```
+
+| Header | Meaning |
+|---|---|
+| `RateLimit-Limit` | Total requests allowed per 15-minute window (per IP) |
+| `RateLimit-Remaining` | Requests you still have left in the current window |
+| `RateLimit-Reset` | Unix timestamp (seconds) when the window resets |
+| `X-Request-Id` | Unique request ID — useful for debugging and support |
+
+### What happens when you hit the limit
+
+HTTP **429 Too Many Requests** is returned:
+
+```json
+{
+  "success": false,
+  "error": "Too Many Requests",
+  "message": "Rate limit exceeded. Please try again in 15 minutes."
+}
+```
+
+### Raising the limit
+
+Set `RATE_LIMIT_MAX` in `.env` before starting the server:
+
+```env
+RATE_LIMIT_MAX=500
+```
+
+> **Note:** The rate limit is enforced per **client IP address**. All clients behind the same NAT share the same quota. If you're deploying behind a reverse proxy (nginx, Cloudflare, etc.), set `TRUST_PROXY=true` so the real client IP is used, not the proxy IP.
+
+---
+
+## Step 7: Integrate into a Frontend Application
 
 ### Option A: Vanilla JavaScript
 
@@ -296,7 +347,12 @@ curl -H "x-api-key: geo_abc123..." http://localhost:3000/api/location
 
 ### "Rate limit exceeded"
 
-You've exceeded 100 requests in 15 minutes. Wait, or increase `RATE_LIMIT_MAX` in `.env`.
+HTTP 429 is returned when you've sent more than `RATE_LIMIT_MAX` requests (default: **100**) within a 15-minute window from the same IP.
+
+**Options:**
+- Wait until the window resets (check the `RateLimit-Reset` header for the exact timestamp).
+- Increase the limit: set `RATE_LIMIT_MAX=500` in `.env` and restart the server.
+- Cache results in your own app to reduce the number of calls you make.
 
 ### CORS errors in browser
 
@@ -317,4 +373,5 @@ ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173,https://myapp.com
 | 3 | `npm start` — Start the server |
 | 4 | `POST /api/projects` — Create a project and get an API key |
 | 5 | `GET /api/location` with `x-api-key` header — Get geolocation data |
-| 6 | Integrate into your app using fetch, axios, or any HTTP client |
+| 6 | Monitor rate-limit headers (`RateLimit-Remaining`, `RateLimit-Reset`) |
+| 7 | Integrate into your app using fetch, axios, or any HTTP client |
