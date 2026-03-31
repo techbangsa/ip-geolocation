@@ -9,7 +9,7 @@ const apiKeyService = require('../services/apiKeyService');
  * Middleware that checks for a valid API key in the x-api-key header.
  * Rejects unauthorized requests with a 401 response.
  */
-function apiKeyAuth(req, res, next) {
+async function apiKeyAuth(req, res, next) {
   const apiKey = req.headers['x-api-key'];
 
   // Check if API key is provided
@@ -31,7 +31,8 @@ function apiKeyAuth(req, res, next) {
   }
 
   // Validate the API key against stored projects
-  const project = apiKeyService.validateApiKey(apiKey);
+  try {
+  const project = await apiKeyService.validateApiKey(apiKey);
 
   if (!project) {
     return res.status(403).json({
@@ -44,10 +45,13 @@ function apiKeyAuth(req, res, next) {
   // Attach project info to the request for downstream use
   req.project = project;
 
-  // Increment the usage counter
-  apiKeyService.incrementUsage(apiKey);
+  // Increment the usage counter (non-blocking)
+  apiKeyService.incrementUsage(apiKey).catch(() => {});
 
   next();
+  } catch (err) {
+    next(err);
+  }
 }
 
 module.exports = apiKeyAuth;

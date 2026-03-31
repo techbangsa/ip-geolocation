@@ -7,9 +7,16 @@
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
-  "keywords": ["geolocation", "ip", "api", "express", "security"],
+  "keywords": [
+    "geolocation",
+    "ip",
+    "api",
+    "express",
+    "security"
+  ],
   "license": "MIT",
   "dependencies": {
+    "@supabase/supabase-js": "^2.101.0",
     "axios": "^1.7.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
