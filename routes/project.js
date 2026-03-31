@@ -18,7 +18,7 @@ const apiKeyService = require('../services/apiKeyService');
  * Response:
  *   { success: true, data: { id, name, apiKey, createdAt, ... } }
  */
-router.post('/', (req, res, next) => {
+router.post('/', async (req, res, next) => {
   try {
     const { name } = req.body;
 
@@ -36,7 +36,7 @@ router.post('/', (req, res, next) => {
     const sanitizedName = name.trim().slice(0, 100);
 
     // Create the project
-    const project = apiKeyService.createProject(sanitizedName);
+    const project = await apiKeyService.createProject(sanitizedName);
 
     return res.status(201).json({
       success: true,
@@ -59,7 +59,7 @@ router.post('/', (req, res, next) => {
  * List all projects with masked API keys and usage stats.
  * Protected by admin key (optional - controlled via ADMIN_API_KEY env var).
  */
-router.get('/', (req, res, next) => {
+router.get('/', async (req, res, next) => {
   try {
     const adminKey = process.env.ADMIN_API_KEY;
 
@@ -76,7 +76,7 @@ router.get('/', (req, res, next) => {
       }
     }
 
-    const projects = apiKeyService.getAllProjects();
+    const projects = await apiKeyService.getAllProjects();
 
     return res.status(200).json({
       success: true,
@@ -94,7 +94,7 @@ router.get('/', (req, res, next) => {
  * Get usage statistics for the current project (identified by API key).
  * Requires x-api-key header.
  */
-router.get('/stats', (req, res, next) => {
+router.get('/stats', async (req, res, next) => {
   try {
     const apiKey = req.headers['x-api-key'];
 
@@ -107,7 +107,7 @@ router.get('/stats', (req, res, next) => {
       });
     }
 
-    const stats = apiKeyService.getProjectStats(apiKey);
+    const stats = await apiKeyService.getProjectStats(apiKey);
 
     if (!stats) {
       return res.status(404).json({
