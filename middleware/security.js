@@ -46,18 +46,18 @@ function configureHelmet() {
 function configureCors() {
   const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
-    : ['http://localhost:3000'];
+    : ['*'];
 
   return cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (server-to-server, curl, Postman)
       if (!origin) return callback(null, true);
 
-      if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+      if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
-      return callback(new Error('Not allowed by CORS'));
+      return callback(new Error('Origin not allowed by CORS policy.'));
     },
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type', 'x-api-key'],
