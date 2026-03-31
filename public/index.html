@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="IP Geolocation API — Generate an API key and get location data with a single fetch call.">
+  <title>IP Geolocation API</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<!-- ─── Navigation ─────────────────────────────────────────────────────────── -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">
+      <span class="icon">🌍</span>
+      <span>GeoLocation API</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#start">Get Started</a></li>
+      <li><a href="#try-it">Try It</a></li>
+      <li><a href="#docs">Docs</a></li>
+    </ul>
+    <button class="nav-hamburger" aria-label="Toggle menu">☰</button>
+  </div>
+</nav>
+
+<main>
+
+  <!-- ─── Hero ─────────────────────────────────────────────────────────────── -->
+  <section class="hero" id="hero">
+    <div class="hero-badge">⚡ Free &amp; Open Source</div>
+    <h1>Get Location from Any IP</h1>
+    <p>Generate an API key, copy the link, fetch it. That's it.</p>
+    <div class="status-bar" style="justify-content: center;">
+      <span class="status-dot offline"></span>
+      <span class="status-text">Checking API status...</span>
+    </div>
+    <div class="hero-actions">
+      <a href="#start" class="btn btn-primary">Get API Key →</a>
+    </div>
+  </section>
+
+  <!-- ─── How It Works ─────────────────────────────────────────────────────── -->
+  <section id="how">
+    <div class="card-grid three-col">
+      <div class="card step-card">
+        <div class="card-icon">①</div>
+        <h3>Generate Key</h3>
+        <p>Enter a project name and get your API key instantly.</p>
+      </div>
+      <div class="card step-card">
+        <div class="card-icon">②</div>
+        <h3>Copy the Link</h3>
+        <p>Your personal API link is ready — just copy it.</p>
+      </div>
+      <div class="card step-card">
+        <div class="card-icon">③</div>
+        <h3>Fetch &amp; Done</h3>
+        <p>Use a simple <code>fetch()</code> call to get location data.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Get Started ──────────────────────────────────────────────────────── -->
+  <section id="start">
+    <div class="section-header">
+      <h2>Get Your API Key</h2>
+      <p>One form. One click. You're ready.</p>
+    </div>
+
+    <div class="card" style="max-width: 580px;">
+      <form id="apikey-form" autocomplete="off">
+        <div class="form-group">
+          <label for="project-name">Project Name</label>
+          <input type="text" id="project-name" placeholder="e.g. My Website" maxlength="100" required>
+        </div>
+        <button type="submit" id="apikey-submit" class="btn btn-primary" style="width: 100%;">
+          Generate API Key
+        </button>
+      </form>
+
+      <div class="error-message"></div>
+
+      <!-- ─── Result (hidden until key generated) ────────────────────────── -->
+      <div class="key-result" id="key-result">
+
+        <!-- API Key -->
+        <div class="result-section">
+          <div class="label">✓ Your API Key</div>
+          <div class="key-display">
+            <span id="key-value"></span>
+            <button class="copy-btn" id="copy-key" title="Copy API key">📋</button>
+          </div>
+          <div class="key-warning">⚠️ Save this key — it cannot be retrieved later.</div>
+        </div>
+
+        <!-- Ready-to-use links -->
+        <div class="result-section">
+          <div class="label">📎 Your API Links <span class="label-hint">(click to copy)</span></div>
+
+          <div class="link-row">
+            <span class="link-label">Auto-detect visitor IP:</span>
+            <div class="link-box">
+              <code id="link-auto-url"></code>
+              <button class="copy-btn" data-copy="link-auto-url" title="Copy">📋</button>
+            </div>
+          </div>
+
+          <div class="link-row">
+            <span class="link-label">Specific IP lookup:</span>
+            <div class="link-box">
+              <code id="link-ip-url"></code>
+              <button class="copy-btn" data-copy="link-ip-url" title="Copy">📋</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Copy-paste code snippets -->
+        <div class="result-section">
+          <div class="label">📋 Copy-Paste Code</div>
+          <p class="helper-text">Drop this into your site — it just works.</p>
+
+          <div class="code-block">
+            <div class="code-header">
+              <span>Get visitor's location</span>
+              <button class="copy-code">Copy</button>
+            </div>
+            <pre><code id="snippet-auto"></code></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-header">
+              <span>Look up a specific IP</span>
+              <button class="copy-code">Copy</button>
+            </div>
+            <pre><code id="snippet-ip"></code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Try It Live ──────────────────────────────────────────────────────── -->
+  <section id="try-it">
+    <div class="section-header">
+      <h2>Try It Live</h2>
+      <p>Paste your API key, enter an IP, and see the result instantly.</p>
+    </div>
+
+    <div class="card">
+      <div class="playground-controls">
+        <input type="text" id="playground-key" placeholder="Paste your API key here">
+        <input type="text" id="playground-ip" placeholder="IP (e.g. 8.8.8.8)" style="max-width: 200px;">
+        <button id="playground-run" class="btn btn-primary">▶ Fetch</button>
+      </div>
+      <div class="response-viewer" id="playground-output">
+        <span class="json-null">// Response will appear here</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Docs ─────────────────────────────────────────────────────────────── -->
+  <section id="docs">
+    <div class="section-header">
+      <h2>API Reference</h2>
+    </div>
+
+    <div class="endpoint">
+      <span class="method-badge post">POST</span>
+      <div>
+        <div class="endpoint-path">/api/projects</div>
+        <div class="endpoint-desc">Create a project → get API key. Body: <code>{"name": "..."}</code></div>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <span class="method-badge get">GET</span>
+      <div>
+        <div class="endpoint-path">/api/location</div>
+        <div class="endpoint-desc">Auto-detect visitor IP. Header: <code>x-api-key: YOUR_KEY</code></div>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <span class="method-badge get">GET</span>
+      <div>
+        <div class="endpoint-path">/api/location?ip=8.8.8.8</div>
+        <div class="endpoint-desc">Look up specific IP. Header: <code>x-api-key: YOUR_KEY</code></div>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <span class="method-badge get">GET</span>
+      <div>
+        <div class="endpoint-path">/api/projects/stats</div>
+        <div class="endpoint-desc">Your usage stats. Header: <code>x-api-key: YOUR_KEY</code></div>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <span class="method-badge get">GET</span>
+      <div>
+        <div class="endpoint-path">/health</div>
+        <div class="endpoint-desc">Server health check. No auth needed.</div>
+      </div>
+    </div>
+
+    <!-- Example Response -->
+    <div style="margin-top: 2rem;">
+      <h3 style="margin-bottom: 1rem; font-size: 1.05rem;">Example Response</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span>GET /api/location?ip=8.8.8.8</span>
+          <button class="copy-code">Copy</button>
+        </div>
+        <pre><code>{
+  "success": true,
+  "data": {
+    "ip": "8.8.8.8",
+    "country": "United States",
+    "countryCode": "US",
+    "regionName": "Virginia",
+    "city": "Ashburn",
+    "zip": "20149",
+    "latitude": 39.03,
+    "longitude": -77.5,
+    "timezone": "America/New_York",
+    "isp": "Google LLC",
+    "organization": "Google Public DNS"
+  }
+}</code></pre>
+      </div>
+    </div>
+
+    <!-- Self host -->
+    <div style="margin-top: 2.5rem;">
+      <h3 style="margin-bottom: 1rem; font-size: 1.05rem;">Self-Host</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span>Terminal</span>
+          <button class="copy-code">Copy</button>
+        </div>
+        <pre><code>git clone https://github.com/your-username/ip-geolocation-api.git
+cd ip-geolocation-api &amp;&amp; npm install
+npm start</code></pre>
+      </div>
+      <p class="helper-text">Requires Node.js 18+. Runs on port 8080 by default.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <p>IP Geolocation API &mdash; Built with Express.js</p>
+</footer>
+
+<script src="/js/app.js"></script>
+</body>
+</html>

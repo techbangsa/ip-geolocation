@@ -10,6 +10,7 @@ require('dotenv').config();
 
 const express = require('express');
 const morgan = require('morgan');
+const path = require('path');
 
 // Middleware
 const {
@@ -70,6 +71,9 @@ app.use(
 // 7. JSON body parsing (limited to 10kb to prevent abuse)
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: false, limit: '10kb' }));
+
+// ─── Static Frontend ─────────────────────────────────────────────────────────
+app.use(express.static(path.join(__dirname, 'public')));
 
 // ─── Public Routes (no API key required) ─────────────────────────────────────
 
