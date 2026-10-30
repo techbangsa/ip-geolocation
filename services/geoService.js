@@ -145,6 +145,61 @@ async function lookupIP(ip) {
   }
 }
 
+/**
+ * Build geolocation data from the headers Vercel's edge attaches to every
+ * request (x-vercel-ip-*). No external call is made, so this costs almost no
+ * function CPU. Only covers the caller's own IP and has no ISP/ASN fields.
+ * @param {import('express').Request} req - Express request object
+ * @returns {object|null} Normalized geolocation data, or null when not on Vercel
+ */
+function lookupFromVercelHeaders(req) {
+  const h = req.headers;
+  const countryCode = h['x-vercel-ip-country'];
+  if (!countryCode) return null;
+
+  const decode = (v) => {
+    if (!v) return null;
+    try {
+      return decodeURIComponent(v);
+    } catch {
+      return v;
+    }
+  };
+  const toNumber = (v) => (v && !Number.isNaN(Number(v)) ? Number(v) : null);
+  const ip = (h['x-real-ip'] || h['x-vercel-forwarded-for'] || '').split(',')[0].trim() || null;
+
+  return {
+    ip,
+    country: null,
+    countryCode,
+    region: decode(h['x-vercel-ip-country-region']),
+    regionName: null,
+    city: decode(h['x-vercel-ip-city']),
+    district: null,
+    zip: decode(h['x-vercel-ip-postal-code']),
+    postalCode: decode(h['x-vercel-ip-postal-code']),
+    latitude: toNumber(h['x-vercel-ip-latitude']),
+    longitude: toNumber(h['x-vercel-ip-longitude']),
+    timezone: decode(h['x-vercel-ip-timezone']),
+    utcOffset: null,
+    continent: h['x-vercel-ip-continent'] || null,
+    isp: null,
+    organization: null,
+    asn: null,
+    asnName: null,
+    reverseDns: null,
+    connectionType: {
+      isProxy: false,
+      isHosting: false,
+      isMobile: false,
+    },
+    currency: null,
+    languages: null,
+    provider: 'vercel',
+  };
+}
+
 module.exports = {
   lookupIP,
+  lookupFromVercelHeaders,
 };

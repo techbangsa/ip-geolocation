@@ -6,7 +6,7 @@
 const express = require('express');
 const router = express.Router();
 
-const { lookupIP } = require('../services/geoService');
+const { lookupIP, lookupFromVercelHeaders } = require('../services/geoService');
 const { extractClientIP, isPrivateIP, sanitizeIP } = require('../utils/ipUtils');
 const { getCachedLocation, setCachedLocation } = require('../utils/cache');
 
@@ -20,6 +20,24 @@ const { getCachedLocation, setCachedLocation } = require('../utils/cache');
  */
 router.get('/', async (req, res, next) => {
   try {
+    // Visitors always get the same answer for a while; let the browser reuse it
+    res.set('Cache-Control', 'private, max-age=3600');
+
+    // Fast path: on Vercel, answer the caller's own IP from edge geo headers
+    // without calling an external provider. Pass ?full=true for ISP/ASN data.
+    if (!req.query.ip && req.query.full !== 'true') {
+      const edgeData = lookupFromVercelHeaders(req);
+      if (edgeData) {
+        return res.status(200).json({
+          success: true,
+          cached: false,
+          requestId: req.requestId,
+          project: req.project?.name || null,
+          data: edgeData,
+        });
+      }
+    }
+
     // Extract or use the provided IP address
     let ip = req.query.ip
       ? sanitizeIP(req.query.ip)

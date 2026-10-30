@@ -44,45 +44,92 @@ async function createProject(projectName) {
   };
 }
 
+// Validated keys are cached per instance so most requests skip Supabase.
+// Unknown keys are cached too (shorter) so bad keys can't hammer the DB.
+const KEY_CACHE_TTL_MS = 5 * 60 * 1000;
+const INVALID_KEY_CACHE_TTL_MS = 60 * 1000;
+const keyCache = new Map();
+
+// Usage counts are accumulated in memory and written at most once per
+// interval instead of a read + write on every request.
+const USAGE_FLUSH_INTERVAL_MS = 60 * 1000;
+const pendingUsage = new Map();
+let lastUsageFlush = Date.now();
+let usageFlushInFlight = null;
+
 async function validateApiKey(apiKey) {
   if (!apiKey || typeof apiKey !== 'string') return null;
 
+  const cached = keyCache.get(apiKey);
+  if (cached && cached.expiresAt > Date.now()) return cached.project;
+
   const { data, error } = await supabase
     .from('projects')
-    .select('*')
+    .select('id, name, api_key, created_at, request_count, last_used, active')
     .eq('api_key', apiKey)
     .eq('active', true)
-    .single();
+    .maybeSingle();
 
-  if (error || !data) return null;
+  if (error) throw new Error(error.message);
 
-  return {
-    id: data.id,
-    name: data.name,
-    apiKey: data.api_key,
-    createdAt: data.created_at,
-    requestCount: data.request_count,
-    lastUsed: data.last_used,
-    active: data.active,
-  };
+  const project = data
+    ? {
+        id: data.id,
+        name: data.name,
+        apiKey: data.api_key,
+        createdAt: data.created_at,
+        requestCount: data.request_count,
+        lastUsed: data.last_used,
+        active: data.active,
+      }
+    : null;
+
+  keyCache.set(apiKey, {
+    project,
+    expiresAt: Date.now() + (project ? KEY_CACHE_TTL_MS : INVALID_KEY_CACHE_TTL_MS),
+  });
+
+  return project;
+}
+
+async function flushUsage() {
+  const entries = [...pendingUsage.entries()];
+  pendingUsage.clear();
+  lastUsageFlush = Date.now();
+
+  await Promise.all(
+    entries.map(async ([apiKey, { count, lastUsed }]) => {
+      const { data } = await supabase
+        .from('projects')
+        .select('request_count')
+        .eq('api_key', apiKey)
+        .maybeSingle();
+
+      if (!data) return;
+
+      await supabase
+        .from('projects')
+        .update({
+          request_count: data.request_count + count,
+          last_used: lastUsed,
+        })
+        .eq('api_key', apiKey);
+    })
+  );
 }
 
 async function incrementUsage(apiKey) {
-  const { data } = await supabase
-    .from('projects')
-    .select('request_count')
-    .eq('api_key', apiKey)
-    .single();
+  const entry = pendingUsage.get(apiKey) || { count: 0, lastUsed: null };
+  entry.count += 1;
+  entry.lastUsed = new Date().toISOString();
+  pendingUsage.set(apiKey, entry);
 
-  if (!data) return;
+  if (usageFlushInFlight || Date.now() - lastUsageFlush < USAGE_FLUSH_INTERVAL_MS) return;
 
-  await supabase
-    .from('projects')
-    .update({
-      request_count: data.request_count + 1,
-      last_used: new Date().toISOString(),
-    })
-    .eq('api_key', apiKey);
+  usageFlushInFlight = flushUsage().finally(() => {
+    usageFlushInFlight = null;
+  });
+  await usageFlushInFlight;
 }
 
 async function getAllProjects() {
